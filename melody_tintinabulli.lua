@@ -53,7 +53,7 @@ function delay_grab()
 	local m_volts = input[1].volts
 	output[1].volts = m_volts
 	t_volts = tint_down(m_volts, CHORD)
-	output[2].volts = t_volts
+	output[2].volts = t_volts - 1
 	output[3](pulse(0.1, 5))
 end
 
