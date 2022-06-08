@@ -15,9 +15,15 @@ end
 function init()
     cur_pos = {1, 0, -2.6}
     input[1].mode('change', 1, 0.3, 'rising')
+    cur_time = time()
 end
 
 input[1].change = function(state)
+    cur_dif = (time() - cur_time)/1000
+    output[1].slew = cur_dif/2
+    output[2].slew = cur_dif/2
+    output[3].slew = cur_dif/2
+    cur_time = time()
     new_pos = ikeda(table.unpack(cur_pos))
     print(new_pos[1])
     output[1].volts = new_pos[1]

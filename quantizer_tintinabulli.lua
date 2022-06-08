@@ -24,23 +24,6 @@ function tint_down(volts, chord)
 	return tint_volts
 end
 
-function tint_up(volts, chord)
-	local octave = math.floor(volts)
-	local degree = (volts - octave) * 12
-	local min_dist = 5000
-	local distance = 0
-	for i, chord_degree in ipairs(chord) do
-		if chord_degree - degree > 0 then distance = chord_degree - degree
-		else distance = (chord_degree + 12) - degree end
-
-		if distance < min_dist then
-			min_dist = distance
-			tint_volts = (degree + distance)/12 + octave
-		end
-	end
-	return tint_volts
-end
-
 function degree_to_volts(degree, scale, oct)
 	local scale_size = #scale
 	local volt_degree = scale[(degree % scale_size) + 1]/12
@@ -52,29 +35,39 @@ function delay_grab()
 	-- Delays grabbing the 1v/Oct
 	local m_volts = input[1].volts
 	output[1].volts = m_volts
-	t_volts = tint_down(m_volts, CHORD)
-	output[2].volts = t_volts - 1
-	output[3](pulse(0.1, 5))
+    output[2](pulse(0.1, 5))
+end
+
+function delay_tint()
+    -- Delays playing tintinabulli note
+    local m_volts = output[1].volts
+    t_volts = tint_down(m_volts, CHORD)
+    output[3].volts = t_volts - OCT_SEQ()
+	output[4](pulse(0.1, 5))
 end
 
 --- Global parameters
 -- CHORD is the Tintinabulli chord defined in pitch class (0 through 11 in tradtional 12-ET)
-
 SCALE = {0, 2, 3, 5, 7, 8, 10}
-CHORD = {
-	0, 3, 7
-}
-
-TINT_FUNCTION = s{tint_down, tint_up}
+CHORD = {0, 3, 7}
+OCT_SEQ = s{-1, 0, 1}
 
 function init()
-	m_volts = 0
+	input[1].mode('scale', SCALE)
 	input[2].mode('change', 1, 0.3, 'rising')
-	output[1].scale(SCALE)
-    output[2].scale(SCALE)
+    output[1].scale(SCALE)
+    output[3].scale(SCALE)
+end
+
+input[1].scale = function(state)
+    delay(delay_grab, 0.01)
 end
 
 input[2].change = function(state)
-	delay(delay_grab, 0.01)
+	delay(delay_tint, 0.01)
 end
 
+function tune()
+    output[1].volts = 3
+    output[3].volts = 3
+end
