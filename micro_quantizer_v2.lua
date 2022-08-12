@@ -31,6 +31,14 @@ function delay_grab()
 	output[2](pulse(0.01, 5))
 	cur_out = OUT_DRONE()
 	if cur_out == 1 then
-		output[3].volts = m_volts +2
+		output[3].volts = m_volts
+		output[4](pulse( 0.5, 5))
 	end
+end
+
+function tune()
+	output[1].volts = 3
+	output[2].volts = 5
+	output[3].volts = 3
+	output[4].volts = 5
 end
