@@ -36,11 +36,13 @@
 register = sequins{0,0,0,0,0,0,0,0}                     -- use sequins as register
 r = register
 s = {4,2,1}                                             -- set up 3-bit DAC
+max = 5
+SCALE = {1/1, 20/19, 20/17, 4/3, 3/2, 30/19, 30/17}
 
 function init()
-  input[1].mode('change',1.0,0.1,'rising')              -- set up input 1 to take clock
-  output[2].scale({0,2,3,7,8},12,1)                     -- set scale for output 2
-  m:start()                                             -- start metro for noise
+  input[1].mode('change',1.0,0.1,'rising')
+  output[2].action = pulse(0.05, 5)
+  output[4].scale(SCALE, 'ji')          -- set up input 1 to take clock
 end
 
 function to_bin(value,threshold)                        -- check if value is over threshold and output 1/0
@@ -48,21 +50,15 @@ function to_bin(value,threshold)                        -- check if value is ove
   return b and 1 or 0
 end
 
-function noise()                                        -- output +/-5 volts randomly when called
-  rnd = math.random(1000, -1000) * 0.005
-  output[3].volts = rnd
-end
-
-m = metro.init{event = noise                            -- metronome that calls the noise function really fast
-             , time = 0.0004
-             , count = -1
-              }
-
 input[1].change = function()
-  v = input[2].volts                                    -- get voltage from input 2
-  r[1] = to_bin(v,0)~r[8]                               -- convert to 1/0, xor with step 8, save to step 1
+  local v = input[2].volts                                    -- get voltage from input 2
+  local cur_pitch = output[4].volts
+  if v > max then max = v end
+  print((r[6]*s[1]+r[7]*s[2]+r[8]*s[3])/5 + 2 )
+  r[1] = to_bin(v,max/2)~r[8]                               -- convert to 1/0, xor with step 8, save to step 1
   output[1].volts = v                                   -- output s/h
-  output[2].volts = v                                   -- output quantized s/d
-  output[4].volts = r[6]*s[1]+r[7]*s[2]+r[8]*s[3]       -- output step 6-8 via 3-bit DAC
+  if (cur_pitch - (r[6]*s[1]+r[7]*s[2]+r[8]*s[3])/5 + 2) > 0.01 then output[2]() end -- trigger when pitch changes
+  output[3].volts = r[6]*s[1]+r[7]*s[2]+r[8]*s[3]       -- output quantized s/d
+  output[4].volts = (r[6]*s[1]+r[7]*s[2]+r[8]*s[3])/5 + 2       -- output step 6-8 via 3-bit DAC
   r:settable({r[8],r[1],r[2],r[3],r[4],r[5],r[6],r[7]}) -- Rotate register
 end
